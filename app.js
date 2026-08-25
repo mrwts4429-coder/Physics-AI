@@ -807,9 +807,10 @@ if (quickAsk) {
   });
 }
 
-// ✅ الكود الجديد المحسن للإغلاق والتحكم في القائمة الجانبية:
+// ✅ الكود النهائي المحسن للتحكم بالقائمة الجانبية وزر الإغلاق X:
 const menuToggle = el('menuToggle');
 const sidebar = document.querySelector('.sidebar');
+const sidebarCloseBtn = el('sidebarCloseBtn');
 
 // 1. وظيفة إغلاق القائمة
 function closeSidebar() {
@@ -819,26 +820,33 @@ function closeSidebar() {
   }
 }
 
-// 2. زر فتح/إغلاق القائمة عند الضغط عليه
+// 2. زر فتح/إغلاق القائمة (زر القائمة الرئيسي في الهيدر)
 if (menuToggle && sidebar) {
   menuToggle.addEventListener('click', (e) => {
-    e.stopPropagation(); // منع انتشار الضغطة
+    e.stopPropagation();
     sidebar.classList.toggle('open');
   });
 }
 
-// 3. إغلاق القائمة الجانبية فوراً عند الضغط على أي رابط/زر داخل القائمة
+// 3. ربط زر الإغلاق المباشر (علامة X) داخل القائمة الجانبية
+if (sidebarCloseBtn) {
+  sidebarCloseBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    closeSidebar();
+  });
+}
+
+// 4. إغلاق القائمة فوراً عند الضغط على أي رابط/زر داخلها (مع استثناء زر الإغلاق X)
 document.querySelectorAll('.sidebar .nav-link, .sidebar button, .sidebar a').forEach((link) => {
   link.addEventListener('click', function () {
+    if (this.id === 'sidebarCloseBtn') return; // لا نغير الكلاس النشط عند ضغط زر X
     document.querySelectorAll('.nav-link').forEach((l) => l.classList.remove('active'));
     this.classList.add('active');
-    
-    // إغلاق القائمة فوراً لتظهر النافذة/المودال بشكل نظيف
     closeSidebar();
   });
 });
 
-// 4. إغلاق القائمة تلقائياً عند الضغط في أي مكان خارج القائمة الجانبية
+// 5. إغلاق القائمة تلقائياً عند الضغط خارجها
 document.addEventListener('click', (e) => {
   if (sidebar && sidebar.classList.contains('open')) {
     if (!sidebar.contains(e.target) && e.target !== menuToggle && !menuToggle.contains(e.target)) {
@@ -846,7 +854,6 @@ document.addEventListener('click', (e) => {
     }
   }
 });
-
 /* ---------- 17) SOURCE LIBRARY (STANDALONE DASHBOARD SECTION) ---------- */
 let LIBRARY_COUNT = -1;              // آخر عدد معروف للمصادر (للإعلان داخل الشات)
 let libBusy = false;
