@@ -807,17 +807,44 @@ if (quickAsk) {
   });
 }
 
-// قائمة الجوال
+// ✅ الكود الجديد المحسن للإغلاق والتحكم في القائمة الجانبية:
 const menuToggle = el('menuToggle');
 const sidebar = document.querySelector('.sidebar');
-if (menuToggle && sidebar) menuToggle.addEventListener('click', () => sidebar.classList.toggle('open'));
 
-// روابط التنقل النشطة
-document.querySelectorAll('.nav-link').forEach((link) => {
+// 1. وظيفة إغلاق القائمة
+function closeSidebar() {
+  if (sidebar) {
+    sidebar.classList.remove('open');
+    sidebar.classList.remove('active');
+  }
+}
+
+// 2. زر فتح/إغلاق القائمة عند الضغط عليه
+if (menuToggle && sidebar) {
+  menuToggle.addEventListener('click', (e) => {
+    e.stopPropagation(); // منع انتشار الضغطة
+    sidebar.classList.toggle('open');
+  });
+}
+
+// 3. إغلاق القائمة الجانبية فوراً عند الضغط على أي رابط/زر داخل القائمة
+document.querySelectorAll('.sidebar .nav-link, .sidebar button, .sidebar a').forEach((link) => {
   link.addEventListener('click', function () {
     document.querySelectorAll('.nav-link').forEach((l) => l.classList.remove('active'));
     this.classList.add('active');
+    
+    // إغلاق القائمة فوراً لتظهر النافذة/المودال بشكل نظيف
+    closeSidebar();
   });
+});
+
+// 4. إغلاق القائمة تلقائياً عند الضغط في أي مكان خارج القائمة الجانبية
+document.addEventListener('click', (e) => {
+  if (sidebar && sidebar.classList.contains('open')) {
+    if (!sidebar.contains(e.target) && e.target !== menuToggle && !menuToggle.contains(e.target)) {
+      closeSidebar();
+    }
+  }
 });
 
 /* ---------- 17) SOURCE LIBRARY (STANDALONE DASHBOARD SECTION) ---------- */
