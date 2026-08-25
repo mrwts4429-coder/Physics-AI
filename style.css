@@ -188,6 +188,34 @@ strong {
         transform: translateX(100%); /* سحب القائمة لليمين خارج الشاشة */
     }
 }
+.sidebar-close-btn {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    color: #fff;
+    font-size: 20px;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s ease;
+    z-index: 1001;
+}
+
+.sidebar-close-btn:hover {
+    background: rgba(255, 255, 255, 0.25);
+}
+
+@media (min-width: 992px) {
+    .sidebar-close-btn {
+        display: none;
+    }
+}
 
 /* =====================================================
    BRAND
