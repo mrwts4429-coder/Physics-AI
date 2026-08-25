@@ -165,7 +165,7 @@ strong {
 
     padding: 24px 18px;
 
-    z-index: 100;
+    z-index: 1000; /* رفعنا الرقم لضمان الترتيب */
 
     color: #fff;
 
@@ -177,13 +177,16 @@ strong {
     overflow-x: hidden;
 }
 
-.sidebar::-webkit-scrollbar {
-    width: 5px;
+/* كلاس الفتح الخاص بالجافاسكربت على الجوال */
+.sidebar.open {
+    transform: translateX(0) !important;
 }
 
-.sidebar::-webkit-scrollbar-thumb {
-    background: rgba(255,255,255,0.15);
-    border-radius: 20px;
+/* إخفاء القائمة تلقائياً خارج الشاشة في الموبايل والتابلت */
+@media (max-width: 991px) {
+    .sidebar {
+        transform: translateX(100%); /* سحب القائمة لليمين خارج الشاشة */
+    }
 }
 
 /* =====================================================
@@ -4518,4 +4521,11 @@ footer strong {
         max-width: 100% !important;
         padding: 0 !important;
     }
+}
+/* ضبط الترتيب بحيث تظهر النوافذ والشات فوق القائمة الجانبية دائماً */
+.chat-overlay,
+.chat-panel,
+.modal-overlay,
+.modal-dialog {
+    z-index: 9999 !important;
 }
