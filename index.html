@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مساعد مستر حجازي | الفيزياء</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+<div class="app">
+    <aside class="sidebar">
+        <div class="brand">
+            <div class="brand-icon"><i class="fa-solid fa-atom"></i></div>
+            <div>
+                <h1>مساعد الفيزياء</h1>
+                <span>منصة إعداد الدروس الذكية</span>
+            </div>
+        </div>
+
+        <div class="teacher-profile">
+            <div class="teacher-image">
+                <img src="teacher.jpg" alt="صورة مستر حجازي" onerror="this.style.display='none';this.parentNode.classList.add('no-img');">
+                <span class="status-indicator"></span>
+            </div>
+            <div class="teacher-info">
+                <strong id="teacherNameSide">مستر حجازي</strong>
+                <span>مدرس الفيزياء الأول</span>
+            </div>
+        </div>
+
+        <nav class="navigation">
+            <p class="nav-title">القائمة الرئيسية</p>
+            <a href="#" class="nav-link active" data-view="home">
+                <i class="fa-solid fa-house nav-icon"></i>
+                <span>الرئيسية</span>
+            </a>
+            <a href="#" class="nav-link" data-action="open-chat" data-intent="new">
+                <i class="fa-solid fa-wand-magic-sparkles nav-icon"></i>
+                <span>تحضير درس</span>
+            </a>
+            <a href="#" class="nav-link" data-action="open-lessons">
+                <i class="fa-solid fa-book-open nav-icon"></i>
+                <span>دروسي المحفوظة</span>
+            </a>
+            <a href="#" class="nav-link" data-action="open-bank">
+                <i class="fa-solid fa-layer-group nav-icon"></i>
+                <span>بنك الأسئلة</span>
+            </a>
+            <a href="#" class="nav-link" data-action="scroll-library">
+                <i class="fa-solid fa-book-bookmark nav-icon"></i>
+                <span>مكتبة المصادر</span>
+            </a>
+
+            <p class="nav-title second-title">النظام والذاكرة</p>
+            <a href="#" class="nav-link" data-action="open-lessons">
+                <i class="fa-solid fa-brain nav-icon"></i>
+                <span>ذاكرة الدروس</span>
+            </a>
+            <a href="#" class="nav-link" data-action="open-settings">
+                <i class="fa-solid fa-sliders nav-icon"></i>
+                <span>الإعدادات</span>
+            </a>
+        </nav>
+
+        <div class="sidebar-bottom">
+            <div class="ai-status">
+                <span class="ai-dot"></span>
+                <div>
+                    <strong>المساعد الذكي متصل</strong>
+                    <small>محرك Gemini جاهز للعمل</small>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <header class="topbar">
+            <button class="menu-toggle" id="menuToggle" aria-label="القائمة">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+            <div class="page-heading">
+                <span>لوحة التحكم الرئيسية</span>
+                <h2>مرحبًا بك، <span id="teacherNameTop">مستر حجازي</span> 👋</h2>
+            </div>
+
+            <div class="topbar-search">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="quickAsk" placeholder="اكتب موضوع فيزياء + الصف واضغط Enter...">
+            </div>
+
+            <div class="top-actions">
+                <button class="icon-button" id="settingsIconBtn" data-action="open-settings" aria-label="الإعدادات">
+                    <i class="fa-solid fa-gear"></i>
+                </button>
+                <div class="top-profile">
+                    <div class="top-profile-image">
+                        <img src="teacher.jpg" alt="مستر حجازي" onerror="this.style.display='none';this.parentNode.classList.add('no-img');">
+                    </div>
+                    <div class="profile-meta">
+                        <strong id="teacherNameProfile">مستر حجازي</strong>
+                        <span>حساب معتمد</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <section class="dashboard">
+            <section class="welcome-card">
+                <div class="welcome-text">
+                    <span class="eyebrow"><i class="fa-solid fa-bolt"></i> الذكاء الاصطناعي التفاعلي</span>
+                    <h3>
+                        جهّز درسك في الفيزياء
+                        <br>
+                        بإتقان ودقة علمية عالية.
+                    </h3>
+                    <p>
+                        أدخل اسم الموضوع والصف الدراسي ليقوم المساعد بتقديم تحضير متكامل: الشرح، الأمثلة اليومية، بنك الأسئلة المتدرج، والتنبيه على الأخطاء الشائعة.
+                    </p>
+                    <a href="#" class="primary-button" data-action="open-chat" data-intent="new">
+                        <span>ابدأ تحضير درس الآن</span>
+                        <i class="fa-solid fa-arrow-left"></i>
+                    </a>
+                </div>
+                <div class="welcome-visual">
+                    <div class="physics-symbol"><span>F = ma</span></div>
+                    <div class="orbit orbit-one"></div>
+                    <div class="orbit orbit-two"></div>
+                </div>
+            </section>
+
+            <section class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <span>الدروس المُحضّرة</span>
+                        <div class="stat-icon blue"><i class="fa-solid fa-file-signature"></i></div>
+                    </div>
+                    <strong class="stat-number" id="statLessons">0</strong>
+                    <span class="stat-note" id="statLessonsNote">لم تُحضّر دروس بعد</span>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <span>بنك الأسئلة</span>
+                        <div class="stat-icon purple"><i class="fa-solid fa-circle-question"></i></div>
+                    </div>
+                    <strong class="stat-number" id="statQuestions">0</strong>
+                    <span class="stat-note">سؤال متدرج ومتنوع</span>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <span>الدروس المحفوظة</span>
+                        <div class="stat-icon green"><i class="fa-solid fa-box-archive"></i></div>
+                    </div>
+                    <strong class="stat-number" id="statSaved">0</strong>
+                    <span class="stat-note">محتفظ بها في السجل</span>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <span>حالة الـ Agent</span>
+                        <div class="stat-icon orange"><i class="fa-solid fa-network-wired"></i></div>
+                    </div>
+                    <strong class="stat-number stat-text">مستقر</strong>
+                    <span class="stat-note">متصل بسلسلة n8n</span>
+                </div>
+            </section>
+
+            <section class="dashboard-grid">
+                <div class="panel">
+                    <div class="panel-header">
+                        <div>
+                            <span class="panel-label">الوصول السريع</span>
+                            <h3>إجراءات سريعة</h3>
+                        </div>
+                    </div>
+
+                    <div class="quick-actions">
+                        <a href="#" class="action-card" data-action="open-chat" data-intent="new">
+                            <div class="action-icon blue"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+                            <div>
+                                <strong>تحضير درس جديد</strong>
+                                <span>إنشاء خطة درس كاملة ومخصصة</span>
+                            </div>
+                            <i class="fa-solid fa-chevron-left arrow-icon"></i>
+                        </a>
+
+                        <a href="#" class="action-card" data-action="open-chat" data-intent="genius">
+                            <div class="action-icon purple"><i class="fa-solid fa-brain"></i></div>
+                            <div>
+                                <strong>توليد أسئلة تفكير عليا</strong>
+                                <span>أسئلة للطلاب المتفوقين بمستويات عالية</span>
+                            </div>
+                            <i class="fa-solid fa-chevron-left arrow-icon"></i>
+                        </a>
+
+                        <a href="#" class="action-card" data-action="open-bank">
+                            <div class="action-icon green"><i class="fa-solid fa-folder-open"></i></div>
+                            <div>
+                                <strong>استعراض بنك الأسئلة</strong>
+                                <span>الأسئلة المخزّنة مقسّمة حسب الصعوبة</span>
+                            </div>
+                            <i class="fa-solid fa-chevron-left arrow-icon"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-header">
+                        <div>
+                            <span class="panel-label">النشاط الأخير</span>
+                            <h3>آخر التحضيرات والأنشطة</h3>
+                        </div>
+                        <a href="#" class="view-all" data-action="open-lessons">عرض الكل</a>
+                    </div>
+
+                    <div class="activity-list" id="activityList"></div>
+                </div>
+            </section>
+
+            <!-- ================= SOURCE LIBRARY (STANDALONE) ================= -->
+            <section class="panel library-panel" id="libraryPanel">
+                <div class="panel-header">
+                    <div>
+                        <span class="panel-label">مكتبة المصادر الدائمة</span>
+                        <h3><i class="fa-solid fa-book-bookmark"></i> مصادر المساعد المخزّنة</h3>
+                        <p class="library-sub">ارفع ملفات المنهج والمراجعات (PDF / Word / PowerPoint) مرة واحدة، ويعتمد عليها المساعد في كل التحضيرات القادمة دون إعادة رفعها.</p>
+                    </div>
+                    <div class="library-head-actions">
+                        <button class="lib-btn refresh" id="libRefreshBtn" title="تحديث القائمة"><i class="fa-solid fa-rotate"></i> تحديث</button>
+                        <button class="lib-btn danger" id="libDeleteAllBtn" title="حذف جميع المصادر"><i class="fa-solid fa-trash-can"></i> حذف الكل</button>
+                    </div>
+                </div>
+
+                <div class="dropzone" id="dropzone" tabindex="0">
+                    <input type="file" id="libFileInput" accept=".pdf,.doc,.docx,.ppt,.pptx" multiple hidden>
+                    <div class="dropzone-inner">
+                        <div class="dropzone-icon"><i class="fa-solid fa-cloud-arrow-up"></i></div>
+                        <strong>اسحب الملفات هنا أو اضغط للاختيار</strong>
+                        <span>يمكنك اختيار أكثر من ملف في نفس الوقت — PDF نصي، Word (DOCX)، PowerPoint (PPTX)</span>
+                    </div>
+                </div>
+
+                <div class="bulk-progress" id="bulkProgress" hidden>
+                    <div class="bulk-progress-head">
+                        <span id="bulkProgressLabel">جارٍ الرفع...</span>
+                        <span id="bulkProgressCount">0 / 0</span>
+                    </div>
+                    <div class="bulk-bar"><div class="bulk-bar-fill" id="bulkBarFill"></div></div>
+                    <div class="bulk-file-list" id="bulkFileList"></div>
+                </div>
+
+                <div class="library-list" id="libraryList">
+                    <div class="empty-state"><i class="fa-regular fa-folder-open"></i>
+                        <p>جارٍ تحميل قائمة المصادر...</p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="memory-panel">
+                <div class="memory-info">
+                    <div class="memory-icon"><i class="fa-solid fa-microchip"></i></div>
+                    <div>
+                        <span class="panel-label">ذاكرة المساعد الذكي</span>
+                        <h3>النظام يتذكر تحضيراتك السابقة لتجنب التكرار</h3>
+                        <p>
+                            عند طلب تحضير نفس الموضوع مجدداً، يسترجع الـ AI Agent الأفكار المشروحة سابقاً لتقديم أسئلة جديدة وطرق شرح مبتكرة.
+                        </p>
+                    </div>
+                </div>
+
+                <a href="#" class="secondary-button" data-action="open-lessons">
+                    <span>استعراض السجل</span>
+                    <i class="fa-solid fa-database"></i>
+                </a>
+            </section>
+        </section>
+
+        <footer>
+            <span>منصة مساعد الفيزياء الذكية © 2026</span>
+            <span class="footer-credit">
+                تم التطوير والتصميم بواسطة <strong>مروة سيد</strong>
+            </span>
+        </footer>
+    </main>
+</div>
+
+<button class="chat-launcher" id="chatLauncher" aria-label="افتح المساعد">
+    <i class="fa-solid fa-comment-dots"></i>
+    <span class="launcher-pulse"></span>
+</button>
+
+<div class="chat-overlay" id="chatOverlay"></div>
+<section class="chat-panel" id="chatPanel" aria-hidden="true">
+    <header class="chat-header">
+        <div class="chat-agent">
+            <div class="chat-agent-avatar"><i class="fa-solid fa-atom"></i></div>
+            <div class="chat-agent-meta">
+                <strong>مساعد إعداد دروس الفيزياء</strong>
+                <span id="chatStatus"><span class="chat-online-dot"></span> متصل الآن</span>
+            </div>
+        </div>
+        <div class="chat-header-actions">
+            <button class="chat-icon-btn" id="chatNewSession" title="محادثة جديدة" aria-label="محادثة جديدة">
+                <i class="fa-solid fa-rotate-right"></i>
+            </button>
+            <button class="chat-icon-btn" id="chatClose" title="إغلاق" aria-label="إغلاق">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+    </header>
+
+    <div class="chat-body" id="chatBody"></div>
+
+    <div class="chat-suggestions" id="chatSuggestions">
+        <button class="chip" data-prompt="قانون نيوتن الأول - الصف الأول الثانوي">قانون نيوتن الأول (أولى ثانوي)</button>
+        <button class="chip" data-prompt="اعمل لي خمسة أسئلة جديدة من الدرس السابق">أسئلة جديدة للدرس السابق</button>
+        <button class="chip" data-prompt="الحركة الموجية - الصف الثاني الثانوي">الحركة الموجية (تانية ثانوي)</button>
+    </div>
+
+    <div class="chat-attach-preview" id="chatAttachPreview" hidden></div>
+
+    <form class="chat-input-bar" id="chatForm">
+        <input type="file" id="chatFileInput" accept=".pdf,.doc,.docx,.ppt,.pptx,image/*" hidden>
+        <button type="button" class="chat-attach-btn" id="chatAttachBtn" title="إرفاق ملف (PDF / Word / صورة)" aria-label="إرفاق ملف">
+            <i class="fa-solid fa-paperclip"></i>
+        </button>
+        <textarea id="chatInput" rows="1" placeholder="اكتب موضوع الدرس والصف... مثال: قانون أوم - الصف الثالث الثانوي" autocomplete="off"></textarea>
+        <button type="submit" class="chat-send" id="chatSend" aria-label="إرسال" title="إرسال">
+            <i class="fa-solid fa-paper-plane"></i>
+        </button>
+    </form>
+    <div class="chat-footnote">
+        المساعد قد يخطئ أحيانًا؛ راجع الدقة العلمية قبل الاستخدام. <span id="sessionTag"></span>
+    </div>
+</section>
+
+<div class="modal-overlay" id="bankModal" aria-hidden="true">
+    <div class="modal">
+        <header class="modal-header">
+            <div class="modal-title"><i class="fa-solid fa-layer-group"></i> بنك الأسئلة</div>
+            <button class="modal-close" data-close-modal="bankModal" aria-label="إغلاق"><i class="fa-solid fa-xmark"></i></button>
+        </header>
+        <div class="modal-tabs" id="bankTabs">
+            <button class="modal-tab active" data-level="easy">سهل</button>
+            <button class="modal-tab" data-level="medium">متوسط</button>
+            <button class="modal-tab" data-level="advanced">متقدم</button>
+            <button class="modal-tab" data-level="genius">عبقري</button>
+        </div>
+        <div class="modal-body" id="bankBody"></div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="lessonsModal" aria-hidden="true">
+    <div class="modal">
+        <header class="modal-header">
+            <div class="modal-title"><i class="fa-solid fa-book-open"></i> دروسي المحفوظة</div>
+            <button class="modal-close" data-close-modal="lessonsModal" aria-label="إغلاق"><i class="fa-solid fa-xmark"></i></button>
+        </header>
+        <div class="modal-body" id="lessonsBody"></div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="settingsModal" aria-hidden="true">
+    <div class="modal">
+        <header class="modal-header">
+            <div class="modal-title"><i class="fa-solid fa-sliders"></i> الإعدادات</div>
+            <button class="modal-close" data-close-modal="settingsModal" aria-label="إغلاق"><i class="fa-solid fa-xmark"></i></button>
+        </header>
+        <div class="modal-body">
+            <div class="settings-field">
+                <label for="teacherIdInput">اسم / معرّف المُدرّس (مفتاح الذاكرة)</label>
+                <input type="text" id="teacherIdInput" placeholder="teacher-hegazy">
+                <small>هذا المعرّف هو مفتاح الذاكرة في الورك فلو. غيّره لكل مُدرّس ليحصل على ذاكرة مستقلة. لا تغيّره لنفس المُدرّس حتى تعمل المتابعة تلقائيًا.</small>
+            </div>
+            <div class="settings-actions">
+                <button class="btn-primary" id="saveSettingsBtn"><i class="fa-solid fa-check"></i> حفظ</button>
+                <button class="btn-danger" id="clearHistoryBtn"><i class="fa-solid fa-trash-can"></i> مسح السجل المحلي والذاكرة المرجعية</button>
+            </div>
+            <p class="settings-note">
+                «مسح السجل» يمسح الإحصائيات وبنك الأسئلة وقائمة الأنشطة المخزّنة في هذا المتصفح، ويبدأ جلسة محادثة جديدة. لا يمسح البيانات المخزّنة داخل n8n على الخادم.
+            </p>
+        </div>
+    </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+<script src="app.js"></script>
+</body>
+</html>
