@@ -12,11 +12,11 @@ const CONFIG = {
   // نقطة اتصال محادثة الورك فلو (Chat Trigger في وضع webhook العام).
   webhookUrl: 'https://n8nagent123.app.n8n.cloud/webhook/932fff71-a56c-4d28-aa41-4fd5d4e011f9/chat',
   // نقطة اتصال رفع الملفات (File Upload Webhook — POST FormData).
-  uploadUrl: 'https://n8nagent12.app.n8n.cloud/webhook/physics-source-upload',
+  uploadUrl: 'https://n8nagent123.app.n8n.cloud/webhook/physics-source-upload',
   // نقطة جلب قائمة المصادر الدائمة (List Sources Webhook — POST).
-  listUrl: 'https://n8nagent12.app.n8n.cloud/webhook/physics-source-list',
+  listUrl: 'https://n8nagent123.app.n8n.cloud/webhook/physics-source-list',
   // نقطة حذف المصادر (Delete Source Webhook — POST { source_id } أو { all:true }).
-  deleteUrl: 'https://n8nagent12.app.n8n.cloud/webhook/physics-source-delete',
+  deleteUrl: 'https://n8nagent123.app.n8n.cloud/webhook/physics-source-delete',
   // المعرّف الافتراضي للمُدرّس (مفتاح الذاكرة). يمكن تغييره من الإعدادات.
   defaultTeacherId: 'teacher-hegazy',
 };
