@@ -4557,3 +4557,37 @@ footer strong {
 .modal-dialog {
     z-index: 9999 !important;
 }
+/* تنسيق الصور والرسوم داخل الشات */
+.msg-img-wrap {
+    margin: 12px 0;
+    text-align: center;
+    background: #f8fafc;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 8px;
+    overflow: hidden;
+}
+
+.chat-rendered-img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+    display: block;
+    margin: 0 auto;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+}
+
+.img-caption {
+    display: block;
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 6px;
+    font-weight: 600;
+}
+
+.img-fallback-err {
+    font-size: 11px;
+    color: #dc2626;
+    padding: 6px;
+    display: block;
+}
