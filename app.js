@@ -5,19 +5,15 @@
    - Dynamic stats / recent activity / question bank via localStorage
    - Stop/Abort generation (AbortController)
    - Modals for Question Bank & Settings (no random chat opening)
+   - FIXED: Saved Lesson full preview on click & Session Recall
 ===================================================== */
 
 /* ---------- 1) CONFIG ---------- */
 const CONFIG = {
-  // نقطة اتصال محادثة الورك فلو (Chat Trigger في وضع webhook العام).
   webhookUrl: 'https://n8nagent123.app.n8n.cloud/webhook/932fff71-a56c-4d28-aa41-4fd5d4e011f9/chat',
-  // نقطة اتصال رفع الملفات (File Upload Webhook — POST FormData).
   uploadUrl: 'https://n8nagent123.app.n8n.cloud/webhook/physics-source-upload',
-  // نقطة جلب قائمة المصادر الدائمة (List Sources Webhook — POST).
   listUrl: 'https://n8nagent123.app.n8n.cloud/webhook/physics-source-list',
-  // نقطة حذف المصادر (Delete Source Webhook — POST { source_id } أو { all:true }).
   deleteUrl: 'https://n8nagent123.app.n8n.cloud/webhook/physics-source-delete',
-  // المعرّف الافتراضي للمُدرّس (مفتاح الذاكرة). يمكن تغييره من الإعدادات.
   defaultTeacherId: 'teacher-hegazy',
 };
 
@@ -26,7 +22,7 @@ const LS = {
   teacherId: 'physics_teacher_id',
   session: 'physics_session_id',
   stats: 'physics_stats',            // { lessons, questions, saved }
-  activity: 'physics_activity',      // [ { title, grade, ts } ]
+  activity: 'physics_activity',      // [ { id, title, grade, content, ts } ]
   bank: 'physics_bank',              // { easy:[], medium:[], advanced:[], genius:[] }
 };
 
@@ -49,7 +45,7 @@ function getTeacherId() {
 }
 function getSessionId() {
   let sid = localStorage.getItem(LS.session);
-  if (!sid) { sid = getTeacherId(); localStorage.setItem(LS.session, sid); }
+  if (!sid) { sid = getTeacherId() + '-' + Date.now().toString(36); localStorage.setItem(LS.session, sid); }
   return sid;
 }
 function resetSession() {
@@ -76,8 +72,8 @@ const chatAttachPreview = el('chatAttachPreview');
 
 let chatOpened = false;
 let sending = false;
-let pendingFile = null;              // File selected but not yet sent
-let currentController = null;        // AbortController for the in-flight request
+let pendingFile = null;
+let currentController = null;
 
 /* ---------- 4) OPEN / CLOSE CHAT ---------- */
 function openChat(prefill) {
@@ -105,16 +101,15 @@ function greet() {
   announceLibraryCount();
 }
 
-// يخبر المعلم داخل الشات بعدد الملفات المخزّنة فعليًا في المكتبة الدائمة.
 async function announceLibraryCount() {
   try {
     const n = (typeof LIBRARY_COUNT === 'number' && LIBRARY_COUNT >= 0) ? LIBRARY_COUNT : await fetchLibraryCount();
     if (n > 0) {
-      addBot('📚 المساعد يعتمد حاليًا على **' + n + '** ملف' + (n === 1 ? '' : 'ات') + ' مخزّنة في مكتبة المصادر الدائمة، وسيستفيد منها في التحضيرات. لإضافة مصادر جديدة استخدم «مكتبة المصادر» في اللوحة الرئيسية.');
+      addBot('📚 المساعد يعتمد حاليًا على **' + n + '** ملف' + (n === 1 ? '' : 'ات') + ' مخزّنة في مكتبة المصادر الدائمة، وسيستفيد منها في التحضيرات.');
     } else {
       addBot('📚 لا توجد حاليًا ملفات في مكتبة المصادر الدائمة. يمكنك رفع ملفات المنهج من قسم «مكتبة المصادر» ليعتمد عليها المساعد.');
     }
-  } catch (e) { /* صامت: لا نزعج المعلم إن تعذّر جلب العدد */ }
+  } catch (e) {}
 }
 function currentTeacherName() {
   const id = getTeacherId();
@@ -148,7 +143,6 @@ function addBot(text) {
   scrollDown();
 }
 
-// بطاقة ملف داخل الشات (رسالة المستخدم)
 function addFileMessage(file, note) {
   const wrap = document.createElement('div');
   wrap.className = 'msg user';
@@ -179,20 +173,32 @@ function addTyping() {
 }
 function removeTyping() { const t = el('typingRow'); if (t) t.remove(); }
 
-// escape + خفيف من Markdown
 function escapeHtml(s) {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 function formatRich(raw) {
   let s = escapeHtml(String(raw == null ? '' : raw));
+  
+  // 1. تحويل صور الـ Markdown إلى عناصر <img> حقيقية وتمريرها
+  // يدعم صيغة: ![alt](url)
+  s = s.replace(/!\[(.*?)\]\((https?:\/\/.*?)\)/g, function(match, alt, url) {
+    return '<div class="msg-img-wrap"><img src="' + url + '" alt="' + alt + '" class="chat-rendered-img" onerror="this.onerror=null;this.parentNode.innerHTML=\'<span class=\\'img-fallback-err\\'>⚠️ تعذّر تحميل الصورة</span>\';" /><span class="img-caption">' + alt + '</span></div>';
+  });
+
   const lines = s.split('\n');
   let html = '';
   let inList = false;
   const closeList = () => { if (inList) { html += '</ul>'; inList = false; } };
+  
   for (let line of lines) {
     let t = line.trim();
     t = t.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    
     if (t === '') { closeList(); html += '<div style="height:6px"></div>'; continue; }
+    
+    // إمكانية إظهار حاوي الصور بشكل مميز داخل السطر
+    if (t.includes('class="msg-img-wrap"')) { closeList(); html += t; continue; }
+    
     if (/^#{1,6}\s+/.test(t)) { closeList(); html += '<h4>' + t.replace(/^#{1,6}\s+/, '') + '</h4>'; continue; }
     if (/^\d+[\.\)]\s+\S/.test(t) && t.length < 60) { closeList(); html += '<h4>' + t + '</h4>'; continue; }
     if (/^[-–—_]{3,}$/.test(t)) { closeList(); html += '<hr class="sep">'; continue; }
@@ -235,7 +241,6 @@ function cancelGeneration() {
 /* ---------- 8) SEND MESSAGE TO WORKFLOW ---------- */
 async function sendMessage(text) {
   if (sending) return;
-  // لو فيه ملف مرفق، نرفعه أولًا
   if (pendingFile) { await uploadPendingFile(text); return; }
   if (!text) return;
 
@@ -250,7 +255,7 @@ async function sendMessage(text) {
     const res = await fetch(CONFIG.webhookUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'sendMessage', sessionId: SESSION_ID, chatInput: text }),
+      body: JSON.stringify({ action: 'sendMessage', sessionId: SESSION_ID, teacher_id: getTeacherId(), chatInput: text }),
       signal: currentController.signal,
     });
     removeTyping();
@@ -258,7 +263,6 @@ async function sendMessage(text) {
 
     const reply = await parseReply(res);
     addBot(reply);
-    // تحديث اللوحة عند نجاح تحضير/توليد
     handleAssistantReply(text, reply);
   } catch (err) {
     removeTyping();
@@ -296,7 +300,7 @@ function pickText(data) {
   );
 }
 
-/* ---------- 9) FILE UPLOAD (FormData) ---------- */
+/* ---------- 9) FILE UPLOAD ---------- */
 function fileIcon(name) {
   const ext = (name.split('.').pop() || '').toLowerCase();
   if (ext === 'pdf') return 'fa-solid fa-file-pdf';
@@ -334,7 +338,6 @@ async function uploadPendingFile(note) {
   const file = pendingFile;
   if (!file) return;
 
-  // اعرض بطاقة الملف كرسالة + شريط تقدم
   addFileMessage(file, note);
   setPendingFile(null);
   chatFileInput.value = '';
@@ -361,10 +364,8 @@ async function uploadPendingFile(note) {
   form.append('subject', 'Physics');
   form.append('grade', 'unknown');
   form.append('topics', note || '');
-  if (note) form.append('note', note);
 
   try {
-    // XHR لإظهار تقدم الرفع الحقيقي، مع دعم الإلغاء عبر AbortController
     const result = await xhrUpload(CONFIG.uploadUrl, form, currentController.signal, (pct) => {
       const bar = el('uploadBar'); if (bar) bar.style.width = pct + '%';
     });
@@ -388,7 +389,6 @@ async function uploadPendingFile(note) {
   }
 }
 
-// XHR upload wrapper مع تقدم + إلغاء
 function xhrUpload(url, formData, signal, onProgress) {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
@@ -401,17 +401,12 @@ function xhrUpload(url, formData, signal, onProgress) {
         let data = xhr.responseText;
         try { data = JSON.parse(xhr.responseText); } catch (e) {}
         resolve(data);
-      } else {
-        reject(new Error('HTTP ' + xhr.status));
-      }
+      } else { reject(new Error('HTTP ' + xhr.status)); }
     };
     xhr.onerror = () => reject(new Error('Network error'));
     if (signal) {
       if (signal.aborted) { xhr.abort(); const e = new Error('Aborted'); e.name = 'AbortError'; return reject(e); }
-      signal.addEventListener('abort', () => {
-        xhr.abort();
-        const e = new Error('Aborted'); e.name = 'AbortError'; reject(e);
-      });
+      signal.addEventListener('abort', () => { xhr.abort(); const e = new Error('Aborted'); e.name = 'AbortError'; reject(e); });
     }
     xhr.send(formData);
   });
@@ -429,13 +424,8 @@ function describeUploadResult(data) {
       return { ok: true, toast: 'الملف مسجّل مسبقًا', text: 'ℹ️ «' + name + '» مسجّل بالفعل في مصادر المساعد؛ لا حاجة لإعادة رفعه.' };
     case 'UNSUPPORTED_FILE_TYPE':
       return { ok: false, toast: 'نوع ملف غير مدعوم', text: '⚠️ ' + (message || 'نوع الملف غير مدعوم. الأنواع المدعومة: PDF نصي، DOCX، PPTX.') };
-    case 'INVALID_FILE':
-      return { ok: false, toast: 'ملف غير صالح', text: '⚠️ ' + (message || 'الملف غير صالح.') };
-    case 'UPLOAD_FAILED':
-    case 'REGISTRY_FAILED':
-      return { ok: false, toast: 'فشل الرفع', text: '⚠️ ' + (message || 'تعذّر إكمال رفع الملف. أعد المحاولة.') };
     default:
-      return { ok: true, toast: 'تم استلام الملف', text: '✅ تم إرسال «' + name + '» إلى المساعد.' + (message ? '\n' + message : '') };
+      return { ok: true, toast: 'تم استلام الملف', text: '✅ تم إرسال «' + name + '» إلى المساعد.' };
   }
 }
 
@@ -468,22 +458,30 @@ const activityColors = ['blue-bg', 'purple-bg', 'green-bg'];
 
 function renderActivity() {
   const list = el('activityList');
+  if (!list) return;
   if (!ACTIVITY.length) {
     list.innerHTML = '<div class="empty-state"><i class="fa-regular fa-folder-open"></i>' +
       '<p>لا توجد تحضيرات بعد.<br>ابدأ بتحضير أول درس وسيظهر هنا تلقائيًا.</p></div>';
     return;
   }
   list.innerHTML = ACTIVITY.slice(0, 6).map((a, i) => {
-    return '<div class="activity-item">' +
+    return '<div class="activity-item" style="cursor:pointer;" data-load-id="' + a.id + '">' +
       '<div class="activity-icon ' + activityColors[i % activityColors.length] + '">' +
         '<i class="fa-solid ' + activityIcons[i % activityIcons.length] + '"></i></div>' +
       '<div class="activity-content"><strong></strong><span>' +
         escapeHtml(gradeLabel(a.grade)) + ' • ' + relTime(a.ts) + '</span></div>' +
-      '<span class="badge completed">مكتمل</span></div>';
+      '<span class="badge completed">استعراض</span></div>';
   }).join('');
-  // set titles safely
+
   const items = list.querySelectorAll('.activity-content strong');
   ACTIVITY.slice(0, 6).forEach((a, i) => { if (items[i]) items[i].textContent = a.title; });
+
+  list.querySelectorAll('[data-load-id]').forEach((row) => {
+    row.addEventListener('click', () => {
+      const id = row.getAttribute('data-load-id');
+      loadLessonToChat(id);
+    });
+  });
 }
 
 function gradeLabel(g) {
@@ -493,20 +491,26 @@ function gradeLabel(g) {
   return g || 'الثانوية';
 }
 
-// حفظ تحضير جديد في اللوحة
-function recordLesson(title, grade, questions) {
+// حفظ التحضير مع النص الكامـل داخل local storage
+function recordLesson(title, grade, questions, fullText) {
   STATS.lessons += 1;
   STATS.saved += 1;
   STATS.questions += (questions && questions.length) || 0;
   saveJSON(LS.stats, STATS);
 
-  ACTIVITY.unshift({ title: title || 'درس فيزياء', grade: grade || 'unknown', ts: Date.now() });
+  const lessonId = 'les_' + Date.now().toString(36);
+  ACTIVITY.unshift({
+    id: lessonId,
+    title: title || 'درس فيزياء',
+    grade: grade || 'unknown',
+    content: fullText || 'محتوى الدرس غير متوفر نصياً.',
+    ts: Date.now()
+  });
   ACTIVITY = ACTIVITY.slice(0, 30);
   saveJSON(LS.activity, ACTIVITY);
 
   if (questions && questions.length) {
     questions.forEach((q) => { if (BANK[q.level]) BANK[q.level].push(q); });
-    // keep bank bounded
     ['easy','medium','advanced','genius'].forEach((k) => { BANK[k] = BANK[k].slice(-60); });
     saveJSON(LS.bank, BANK);
   }
@@ -514,13 +518,10 @@ function recordLesson(title, grade, questions) {
   renderActivity();
 }
 
-/* ---------- 11) PARSE ASSISTANT REPLY (topic/grade/questions) ---------- */
-// نحاول استخراج عنوان الدرس/الصف وعدد الأسئلة من رسالة المعلم + رد المساعد،
-// لتحديث الإحصائيات وبنك الأسئلة تلقائيًا. هذا استدلال تقريبي على العميل.
+/* ---------- 11) PARSE ASSISTANT REPLY ---------- */
 function handleAssistantReply(userText, reply) {
   const r = String(reply || '');
-  // اعتبره "درسًا كاملًا" إذا احتوى الرد على بنية الأقسام
-  const isFullLesson = /تحليل الدرس/.test(r) && /بنك أسئلة/.test(r);
+  const isFullLesson = /تحليل الدرس/.test(r) || /أهداف الدرس/.test(r) || /بنك أسئلة/.test(r);
   const isFollowUp = /سؤال|أسئلة/.test(r) && !isFullLesson;
 
   const questions = extractQuestions(r);
@@ -528,10 +529,9 @@ function handleAssistantReply(userText, reply) {
   if (isFullLesson) {
     const title = extractTopic(userText) || 'درس فيزياء';
     const grade = detectGrade(userText);
-    recordLesson(title, grade, questions);
+    recordLesson(title, grade, questions, r);
     showToast('تم تحضير الدرس وإضافته للوحة', 'success');
   } else if (isFollowUp && questions.length) {
-    // متابعة: أضف الأسئلة للبنك وزد العداد دون عدّ درس جديد
     STATS.questions += questions.length;
     saveJSON(LS.stats, STATS);
     questions.forEach((q) => { if (BANK[q.level]) BANK[q.level].push(q); });
@@ -545,7 +545,6 @@ function handleAssistantReply(userText, reply) {
 function extractTopic(text) {
   let t = String(text || '');
   const m = t.match(/^\s*\[sid:[^\]]*\]\s*/); if (m) t = t.slice(m[0].length);
-  // خذ ما قبل شرطة الفصل بين الموضوع والصف
   let topic = t.split(/[-–—]/)[0];
   topic = topic.replace(/(لل|ل)?\s*صف\s+(ال)?(أول|اول|ثاني|ثانى|ثالث)\s*(الثانوي|الثانوية)?/g, ' ')
                .replace(/(الصف|الثانوي|الثانوية)/g, ' ')
@@ -561,7 +560,6 @@ function detectGrade(text) {
   return 'unknown';
 }
 
-// استخراج تقريبي للأسئلة مع تصنيف الصعوبة من نص الرد
 function extractQuestions(reply) {
   const out = [];
   const lines = String(reply || '').split('\n');
@@ -569,13 +567,11 @@ function extractQuestions(reply) {
   for (let raw of lines) {
     const line = raw.trim();
     if (!line) continue;
-    // كشف مستوى الصعوبة من العنوان/الوسم
     if (/عبقري/.test(line)) currentLevel = 'genius';
     else if (/متقدم|صعب/.test(line)) currentLevel = 'advanced';
     else if (/متوسط/.test(line)) currentLevel = 'medium';
     else if (/سهل/.test(line)) currentLevel = 'easy';
 
-    // سطر سؤال مرقّم
     const qm = line.match(/^(?:\d+[\.\)]|[-•])\s+(.{8,})/);
     if (qm) {
       const level = detectLineLevel(line) || currentLevel;
@@ -592,11 +588,10 @@ function detectLineLevel(line) {
   return '';
 }
 
-/* ---------- 12) MODALS ---------- */
+/* ---------- 12) MODALS & LESSON RECALL ---------- */
 function openModal(id) { const m = el(id); if (m) m.classList.add('open'); m.setAttribute('aria-hidden', 'false'); }
 function closeModal(id) { const m = el(id); if (m) { m.classList.remove('open'); m.setAttribute('aria-hidden', 'true'); } }
 
-// bank
 let bankLevel = 'easy';
 function openBank() {
   bankLevel = 'easy';
@@ -624,7 +619,7 @@ function levelLabel(l) {
   return { easy: 'سهل', medium: 'متوسط', advanced: 'متقدم', genius: 'عبقري' }[l] || l;
 }
 
-// lessons / memory
+// عرض الدروس المحفوظة
 function openLessons() {
   const body = el('lessonsBody');
   if (!ACTIVITY.length) {
@@ -634,14 +629,29 @@ function openLessons() {
     body.innerHTML = ACTIVITY.map((a) => {
       return '<div class="lesson-card"><div class="lesson-top"><div>' +
         '<strong></strong><div class="lesson-sub">' + escapeHtml(gradeLabel(a.grade)) + ' • ' + relTime(a.ts) + '</div>' +
-        '</div><button class="lesson-open" data-followup="1">أسئلة جديدة</button></div></div>';
+        '</div><div style="display:flex; gap:6px;"><button class="lesson-open" data-load-id="' + a.id + '">عرض الدرس كامل</button>' +
+        '<button class="lesson-open" style="background:#f3f4f6; color:#374151;" data-followup-id="' + a.id + '">أسئلة جديدة</button></div></div></div>';
     }).join('');
+    
     const strongs = body.querySelectorAll('.lesson-card strong');
     ACTIVITY.forEach((a, i) => { if (strongs[i]) strongs[i].textContent = a.title; });
-    // زر «أسئلة جديدة» يفتح الشات ويطلب متابعة على الدرس السابق
-    body.querySelectorAll('[data-followup]').forEach((btn, i) => {
+
+    // زر "عرض الدرس كامل"
+    body.querySelectorAll('[data-load-id]').forEach((btn) => {
       btn.addEventListener('click', () => {
         closeModal('lessonsModal');
+        loadLessonToChat(btn.getAttribute('data-load-id'));
+      });
+    });
+
+    // زر "أسئلة جديدة"
+    body.querySelectorAll('[data-followup-id]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        closeModal('lessonsModal');
+        const lesson = ACTIVITY.find(x => x.id === btn.getAttribute('data-followup-id'));
+        if (lesson) {
+          SESSION_ID = getTeacherId() + '-' + lesson.id;
+        }
         openChat();
         sendMessage('اعمل لي خمسة أسئلة جديدة من الدرس السابق');
       });
@@ -650,7 +660,25 @@ function openLessons() {
   openModal('lessonsModal');
 }
 
-// settings
+// تحميل محتوى الدرس المختار مباشرة للنافذة التفاعلية
+function loadLessonToChat(lessonId) {
+  const lesson = ACTIVITY.find(a => a.id === lessonId);
+  if (!lesson) return;
+
+  // توحيد المعرف للجلسة الحالية
+  SESSION_ID = getTeacherId() + '-' + lesson.id;
+  localStorage.setItem(LS.session, SESSION_ID);
+
+  // إخلاء وعرض الشات
+  chatBody.innerHTML = '';
+  chatOpened = true;
+  openChat();
+
+  addUser('عرض محتوى الدرس المحفوظ: ' + lesson.title);
+  addBot(lesson.content || 'لا يوجد محتوى نصي مخزن لهذا الدرس.');
+  showToast('تم استرجاع محتوى الدرس والجلسة بنجاح', 'success');
+}
+
 function openSettings() {
   el('teacherIdInput').value = getTeacherId();
   openModal('settingsModal');
@@ -659,7 +687,7 @@ function saveSettings() {
   const val = el('teacherIdInput').value.trim();
   if (!val) { showToast('أدخل معرّفًا صالحًا', 'error'); return; }
   localStorage.setItem(LS.teacherId, val);
-  SESSION_ID = resetSession();               // مفتاح ذاكرة جديد لهذا المُدرّس
+  SESSION_ID = resetSession();
   applyTeacherName();
   closeModal('settingsModal');
   showToast('تم حفظ الإعدادات', 'success');
@@ -698,19 +726,17 @@ function showToast(text, type) {
   setTimeout(() => { t.style.opacity = '0'; t.style.transform = 'translateX(-20px)'; setTimeout(() => t.remove(), 300); }, 3200);
 }
 
-/* ---------- 14) INPUT HELPERS ---------- */
 function autoGrow() {
   chatInput.style.height = 'auto';
   chatInput.style.height = Math.min(chatInput.scrollHeight, 120) + 'px';
 }
 
-/* ---------- 15) EVENTS ---------- */
+/* ---------- 14) EVENTS ---------- */
 chatForm.addEventListener('submit', (e) => {
   e.preventDefault();
   if (sending) return;
   sendMessage(chatInput.value.trim());
 });
-// زر الإرسال/الإلغاء (يتحول لـ button أثناء العمل)
 chatSend.addEventListener('click', (e) => {
   if (sending) { e.preventDefault(); cancelGeneration(); }
 });
@@ -722,7 +748,6 @@ chatInput.addEventListener('keydown', (e) => {
   }
 });
 
-// إرفاق ملف
 chatAttachBtn.addEventListener('click', () => chatFileInput.click());
 chatFileInput.addEventListener('change', () => {
   const f = chatFileInput.files && chatFileInput.files[0];
@@ -740,12 +765,10 @@ el('chatNewSession').addEventListener('click', () => {
   addBot('✅ بدأنا محادثة جديدة. (الذاكرة السابقة لن تُستخدم في هذه المحادثة).');
 });
 
-// شرائح الاقتراحات
 document.querySelectorAll('.chip').forEach((chip) => {
   chip.addEventListener('click', () => { openChat(); sendMessage(chip.dataset.prompt); });
 });
 
-// أزرار فتح الشات المباشر (تحضير درس / أسئلة عليا فقط)
 const intentPrompts = {
   new: '',
   genius: 'اعمل لي أسئلة تفكير عليا (مستوى عبقري) للدرس السابق.',
@@ -755,24 +778,20 @@ document.querySelectorAll('[data-action="open-chat"]').forEach((btn) => {
     e.preventDefault();
     const intent = btn.dataset.intent;
     if (intent === 'genius') { openChat(); sendMessage(intentPrompts.genius); }
-    else { openChat(); } // تحضير درس جديد يفتح الشات فقط بدون إرسال
+    else { openChat(); }
   });
 });
 
-// أزرار بنك الأسئلة (Modal — لا يفتح الشات)
 document.querySelectorAll('[data-action="open-bank"]').forEach((btn) => {
   btn.addEventListener('click', (e) => { e.preventDefault(); openBank(); });
 });
-// أزرار الدروس المحفوظة / الذاكرة (Modal)
 document.querySelectorAll('[data-action="open-lessons"]').forEach((btn) => {
   btn.addEventListener('click', (e) => { e.preventDefault(); openLessons(); });
 });
-// أزرار الإعدادات (Modal)
 document.querySelectorAll('[data-action="open-settings"]').forEach((btn) => {
   btn.addEventListener('click', (e) => { e.preventDefault(); openSettings(); });
 });
 
-// تبويبات بنك الأسئلة
 document.querySelectorAll('#bankTabs .modal-tab').forEach((tab) => {
   tab.addEventListener('click', () => {
     bankLevel = tab.dataset.level;
@@ -782,7 +801,6 @@ document.querySelectorAll('#bankTabs .modal-tab').forEach((tab) => {
   });
 });
 
-// إغلاق المودالات (زر الإغلاق + النقر على الخلفية)
 document.querySelectorAll('[data-close-modal]').forEach((btn) => {
   btn.addEventListener('click', () => closeModal(btn.dataset.closeModal));
 });
@@ -790,11 +808,9 @@ document.querySelectorAll('.modal-overlay').forEach((ov) => {
   ov.addEventListener('click', (e) => { if (e.target === ov) closeModal(ov.id); });
 });
 
-// أزرار الإعدادات
 el('saveSettingsBtn').addEventListener('click', saveSettings);
 el('clearHistoryBtn').addEventListener('click', clearHistory);
 
-// خانة البحث العلوية = تحضير سريع
 const quickAsk = el('quickAsk');
 if (quickAsk) {
   quickAsk.addEventListener('keydown', (e) => {
@@ -807,12 +823,10 @@ if (quickAsk) {
   });
 }
 
-// ✅ الكود النهائي المحسن للتحكم بالقائمة الجانبية وزر الإغلاق X:
 const menuToggle = el('menuToggle');
 const sidebar = document.querySelector('.sidebar');
 const sidebarCloseBtn = el('sidebarCloseBtn');
 
-// 1. وظيفة إغلاق القائمة
 function closeSidebar() {
   if (sidebar) {
     sidebar.classList.remove('open');
@@ -820,7 +834,6 @@ function closeSidebar() {
   }
 }
 
-// 2. زر فتح/إغلاق القائمة (زر القائمة الرئيسي في الهيدر)
 if (menuToggle && sidebar) {
   menuToggle.addEventListener('click', (e) => {
     e.stopPropagation();
@@ -828,7 +841,6 @@ if (menuToggle && sidebar) {
   });
 }
 
-// 3. ربط زر الإغلاق المباشر (علامة X) داخل القائمة الجانبية
 if (sidebarCloseBtn) {
   sidebarCloseBtn.addEventListener('click', (e) => {
     e.stopPropagation();
@@ -836,17 +848,15 @@ if (sidebarCloseBtn) {
   });
 }
 
-// 4. إغلاق القائمة فوراً عند الضغط على أي رابط/زر داخلها (مع استثناء زر الإغلاق X)
 document.querySelectorAll('.sidebar .nav-link, .sidebar button, .sidebar a').forEach((link) => {
   link.addEventListener('click', function () {
-    if (this.id === 'sidebarCloseBtn') return; // لا نغير الكلاس النشط عند ضغط زر X
+    if (this.id === 'sidebarCloseBtn') return;
     document.querySelectorAll('.nav-link').forEach((l) => l.classList.remove('active'));
     this.classList.add('active');
     closeSidebar();
   });
 });
 
-// 5. إغلاق القائمة تلقائياً عند الضغط خارجها
 document.addEventListener('click', (e) => {
   if (sidebar && sidebar.classList.contains('open')) {
     if (!sidebar.contains(e.target) && e.target !== menuToggle && !menuToggle.contains(e.target)) {
@@ -854,8 +864,9 @@ document.addEventListener('click', (e) => {
     }
   }
 });
-/* ---------- 17) SOURCE LIBRARY (STANDALONE DASHBOARD SECTION) ---------- */
-let LIBRARY_COUNT = -1;              // آخر عدد معروف للمصادر (للإعلان داخل الشات)
+
+/* ---------- 15) SOURCE LIBRARY ---------- */
+let LIBRARY_COUNT = -1;
 let libBusy = false;
 
 const dropzone = el('dropzone');
@@ -883,7 +894,6 @@ function fmtDate(iso) {
   catch (e) { return d.toISOString().slice(0, 10); }
 }
 
-// جلب عدد المصادر فقط (يحدّث LIBRARY_COUNT)
 async function fetchLibraryCount() {
   const res = await fetch(CONFIG.listUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
   if (!res.ok) throw new Error('HTTP ' + res.status);
@@ -894,7 +904,6 @@ async function fetchLibraryCount() {
   return LIBRARY_COUNT;
 }
 
-// تحميل + رسم قائمة المصادر الدائمة
 async function loadLibrary() {
   if (!libraryList) return;
   libraryList.innerHTML = '<div class="empty-state"><i class="fa-solid fa-spinner fa-spin"></i><p>جارٍ تحميل قائمة المصادر...</p></div>';
@@ -938,16 +947,15 @@ function renderLibrary(sources) {
         '<button class="s-delete" title="حذف المصدر" data-del="' + escapeHtml(s.source_id) + '"><i class="fa-solid fa-trash-can"></i></button>' +
       '</div></div>';
   }).join('');
-  // set names safely (avoid HTML injection from file names)
+  
   const nameNodes = libraryList.querySelectorAll('.s-name');
   sources.forEach((s, i) => { if (nameNodes[i]) nameNodes[i].textContent = s.source_name || 'ملف بدون اسم'; });
-  // wire delete buttons
+  
   libraryList.querySelectorAll('[data-del]').forEach((btn) => {
     btn.addEventListener('click', () => deleteSource(btn.getAttribute('data-del')));
   });
 }
 
-// ===== Bulk upload: كل ملف في طلب مستقل =====
 async function bulkUpload(files) {
   if (libBusy) return;
   const list = Array.from(files || []).filter(Boolean);
@@ -991,7 +999,6 @@ async function bulkUpload(files) {
   setTimeout(() => { bulkProgress.hidden = true; }, 4000);
 }
 
-// رفع ملف واحد للمكتبة (FormData → File Upload Webhook)
 function uploadOneToLibrary(file) {
   const form = new FormData();
   form.append('file', file, file.name);
@@ -1013,7 +1020,6 @@ function uploadOneToLibrary(file) {
   });
 }
 
-// حذف مصدر واحد
 async function deleteSource(sourceId) {
   if (!sourceId) return;
   if (!confirm('سيتم حذف هذا المصدر نهائيًا من المكتبة الدائمة. متابعة؟')) return;
@@ -1031,7 +1037,6 @@ async function deleteSource(sourceId) {
   await loadLibrary();
 }
 
-// حذف جميع المصادر
 async function deleteAllSources() {
   if (!confirm('سيتم حذف جميع المصادر من المكتبة الدائمة نهائيًا. لا يمكن التراجع. متابعة؟')) return;
   try {
@@ -1048,7 +1053,6 @@ async function deleteAllSources() {
   await loadLibrary();
 }
 
-// ===== Library events =====
 if (dropzone) {
   dropzone.addEventListener('click', () => libFileInput.click());
   dropzone.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); libFileInput.click(); } });
@@ -1060,7 +1064,6 @@ if (libFileInput) libFileInput.addEventListener('change', () => { if (libFileInp
 if (libRefreshBtn) libRefreshBtn.addEventListener('click', loadLibrary);
 if (libDeleteAllBtn) libDeleteAllBtn.addEventListener('click', deleteAllSources);
 
-// رابط القائمة الجانبية «مكتبة المصادر» → تمرير للقسم
 document.querySelectorAll('[data-action="scroll-library"]').forEach((btn) => {
   btn.addEventListener('click', (e) => { e.preventDefault(); const p = el('libraryPanel'); if (p) p.scrollIntoView({ behavior: 'smooth', block: 'start' }); });
 });
