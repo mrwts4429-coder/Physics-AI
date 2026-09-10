@@ -179,10 +179,13 @@ function escapeHtml(s) {
 function formatRich(raw) {
   let s = escapeHtml(String(raw == null ? '' : raw));
   
-  // 1. تحويل صور الـ Markdown إلى عناصر <img> حقيقية وتمريرها
-  // يدعم صيغة: ![alt](url)
+  // 1. تحويل صور الـ Markdown إلى عناصر <img> حقيقية
+  // تم تبسيط معالجة الخطأ باستخدام دالة تنظيف آمنة لتجنب مشاكل الفواصل
   s = s.replace(/!\[(.*?)\]\((https?:\/\/.*?)\)/g, function(match, alt, url) {
-    return '<div class="msg-img-wrap"><img src="' + url + '" alt="' + alt + '" class="chat-rendered-img" onerror="this.onerror=null;this.parentNode.innerHTML=\'<span class=\\'img-fallback-err\\'>⚠️ تعذّر تحميل الصورة</span>\';" /><span class="img-caption">' + alt + '</span></div>';
+    return '<div class="msg-img-wrap">' +
+             '<img src="' + url + '" alt="' + alt + '" class="chat-rendered-img" onerror="this.onerror=null;this.parentElement.innerHTML=\'<span class=&quot;img-fallback-err&quot;>⚠️ تعذّر تحميل الصورة</span>\';" />' +
+             '<span class="img-caption">' + alt + '</span>' +
+           '</div>';
   });
 
   const lines = s.split('\n');
@@ -196,7 +199,6 @@ function formatRich(raw) {
     
     if (t === '') { closeList(); html += '<div style="height:6px"></div>'; continue; }
     
-    // إمكانية إظهار حاوي الصور بشكل مميز داخل السطر
     if (t.includes('class="msg-img-wrap"')) { closeList(); html += t; continue; }
     
     if (/^#{1,6}\s+/.test(t)) { closeList(); html += '<h4>' + t.replace(/^#{1,6}\s+/, '') + '</h4>'; continue; }
@@ -213,7 +215,6 @@ function formatRich(raw) {
   closeList();
   return html;
 }
-
 /* ---------- 7) SEND STATE / CANCEL BUTTON ---------- */
 function setSendingUI(on) {
   sending = on;
