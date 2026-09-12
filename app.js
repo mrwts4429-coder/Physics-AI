@@ -252,6 +252,12 @@ async function sendMessage(text) {
   addTyping();
 
   currentController = new AbortController();
+  
+  // 💡 زيادة مهلة الانتظار إلى 3 دقائق (180,000ms) لمنع المتصفح من قطع الاتصال أثناء التوليد والتدقيق
+  const timeoutId = setTimeout(() => {
+    if (currentController) currentController.abort();
+  }, 180000);
+
   try {
     const res = await fetch(CONFIG.webhookUrl, {
       method: 'POST',
@@ -259,6 +265,8 @@ async function sendMessage(text) {
       body: JSON.stringify({ action: 'sendMessage', sessionId: SESSION_ID, teacher_id: getTeacherId(), chatInput: text }),
       signal: currentController.signal,
     });
+    
+    clearTimeout(timeoutId); // إلغاء المهلة فور استلام الرد
     removeTyping();
     if (!res.ok) throw new Error('HTTP ' + res.status);
 
@@ -266,10 +274,11 @@ async function sendMessage(text) {
     addBot(reply);
     handleAssistantReply(text, reply);
   } catch (err) {
+    clearTimeout(timeoutId);
     removeTyping();
     if (err && err.name === 'AbortError') {
-      addBot('🛑 تم إلغاء الطلب. يمكنك إعادة المحاولة في أي وقت.');
-      showToast('تم إلغاء التوليد', 'info');
+      addBot('🛑 استغرق التوليد والتدقيق وقتاً أطول من المعتاد أو تم إلغاء الطلب. يمكنك إعادة المحاولة.');
+      showToast('انتهت مهلة الانتظار', 'info');
     } else {
       addBot(
         '⚠️ تعذّر الاتصال بالمساعد حاليًا.\n' +
@@ -282,23 +291,6 @@ async function sendMessage(text) {
     setSendingUI(false);
     chatInput.focus();
   }
-}
-
-async function parseReply(res) {
-  const ct = res.headers.get('content-type') || '';
-  if (ct.includes('application/json')) { return pickText(await res.json()); }
-  const txt = await res.text();
-  try { return pickText(JSON.parse(txt)); } catch (e) { return txt || 'لم يصل رد.'; }
-}
-function pickText(data) {
-  if (data == null) return 'لم يصل رد.';
-  if (typeof data === 'string') return data;
-  if (Array.isArray(data)) return pickText(data[0]);
-  return (
-    data.output || data.text || data.reply || data.message || data.answer ||
-    (typeof data.json === 'object' ? pickText(data.json) : null) ||
-    'لم يصل رد نصي واضح من المساعد.'
-  );
 }
 
 /* ---------- 9) FILE UPLOAD ---------- */
