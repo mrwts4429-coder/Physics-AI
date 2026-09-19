@@ -240,6 +240,24 @@ function cancelGeneration() {
 }
 
 /* ---------- 8) SEND MESSAGE TO WORKFLOW ---------- */
+async function parseReply(res) {
+  const ct = res.headers.get('content-type') || '';
+  if (ct.includes('application/json')) { return pickText(await res.json()); }
+  const txt = await res.text();
+  try { return pickText(JSON.parse(txt)); } catch (e) { return txt || 'لم يصل رد.'; }
+}
+
+function pickText(data) {
+  if (data == null) return 'لم يصل رد.';
+  if (typeof data === 'string') return data;
+  if (Array.isArray(data)) return pickText(data[0]);
+  return (
+    data.output || data.text || data.reply || data.message || data.answer ||
+    (typeof data.json === 'object' ? pickText(data.json) : null) ||
+    'لم يصل رد نصي واضح من المساعد.'
+  );
+}
+
 async function sendMessage(text) {
   if (sending) return;
   if (pendingFile) { await uploadPendingFile(text); return; }
@@ -292,6 +310,7 @@ async function sendMessage(text) {
     chatInput.focus();
   }
 }
+
 
 /* ---------- 9) FILE UPLOAD ---------- */
 function fileIcon(name) {
